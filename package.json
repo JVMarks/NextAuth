@@ -1,0 +1,25 @@
+{
+  "name": "nextauth2",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "axios": "^0.27.1",
+    "next": "12.1.5",
+    "nookies": "1.22.5",
+    "react": "18.0.0",
+    "react-dom": "18.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^17.0.28",
+    "@types/react": "^18.0.8",
+    "eslint": "8.14.0",
+    "eslint-config-next": "12.1.5",
+    "typescript": "^4.6.3"
+  }
+}
