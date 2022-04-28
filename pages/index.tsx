@@ -3,6 +3,7 @@ import { useState, FormEvent, useContext } from "react"
 import { AuthContext } from '../contexts/AuthContext'
 
 import styles from '../styles/Home.module.css';
+import { withSSRGuest } from "../utils/withSSRGuest";
 
 
 export default function Home() {
@@ -39,3 +40,10 @@ export default function Home() {
     </div>
   )
 }
+
+export const getServerSideProps = withSSRGuest(async (ctx) => {
+  console.log(ctx.req.cookies);
+  return {
+    props: {}
+  }
+});

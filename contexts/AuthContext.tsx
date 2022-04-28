@@ -1,7 +1,7 @@
 import Router from "next/router";
-import { parseCookies } from "nookies";
+import { parseCookies, destroyCookie } from "nookies";
 import { createContext, ReactNode, useEffect, useState } from "react";
-import { api } from "../services/api";
+import { api } from "../services/apiClient";
 import { setCookie } from "../utils/setCookie";
 
 type User = {
@@ -16,7 +16,8 @@ type SignInCredentials = {
 };
 
 type AuthContextData = {
-  signIn(credentials: SignInCredentials): Promise<void>;
+  signIn: (credentials: SignInCredentials) => Promise<void>;
+  signOut: () => void;
   user: User;
   isAuthenticated: boolean;
 };
@@ -26,10 +27,39 @@ type AuthProviderProps = {
 };
 
 export const AuthContext = createContext({} as AuthContextData);
+let authChannel: BroadcastChannel;
+
+export function signOut() {
+  destroyCookie(undefined, "nextauth.token", { path: "/" });
+  destroyCookie(undefined, "nextauth.refreshToken", { path: "/" });
+
+  //authChannel.postMessage("signOut");
+
+  Router.push("/");
+}
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User>({} as User);
   const isAuthenticated = !!user;
+
+  useEffect(() => {
+    authChannel = new BroadcastChannel("auth");
+
+    authChannel.onmessage = (message) => {
+      switch (message.data) {
+        case "signOut":
+          signOut();
+          authChannel.close();
+          break;
+        case "signIn":
+          window.location.replace("http://localhost:3000/dashboard");
+          break;
+        default:
+          break;
+      }
+    };
+  }, []);
+
 
   useEffect(() => {
     const { "nextauth.token": token } = parseCookies();
@@ -51,9 +81,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       const { token, refreshToken, permissions, roles } = response.data;
 
-      setCookie("nextauth.token", token);
+      setCookie(undefined, "nextauth.token", token);
 
-      setCookie("nextauth.refreshToken", refreshToken);
+      setCookie(undefined, "nextauth.refreshToken", refreshToken);
 
       setUser({
         email,
@@ -64,13 +94,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       api.defaults.headers["Authorization"] = `Bearer ${token}`;
 
       Router.push("/dashboard");
+      authChannel.postMessage('signIn')
     } catch (err) {
       console.log(err);
     }
   }
 
   return (
-    <AuthContext.Provider value={{ signIn, isAuthenticated, user }}>
+    <AuthContext.Provider value={{ signIn, signOut, isAuthenticated, user }}>
       {children}
     </AuthContext.Provider>
   );
